@@ -1,0 +1,289 @@
+Index: src/main/java/com/example/vne/controller/VneController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/example/vne/controller/VneController.java	(date 1594476675802)
++++ src/main/java/com/example/vne/controller/VneController.java	(date 1594476675802)
+@@ -0,0 +1,69 @@
++package com.example.vne.controller;
++
++import com.example.vne.Exception.ResourceNotFoundException;
++import com.example.vne.model.Vne;
++import com.example.vne.repository.VneRepository;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++
++import javax.transaction.Transactional;
++import java.util.HashMap;
++import java.util.Map;
++
++import java.util.Optional;
++
++
++@RestController
++@RequestMapping("/api/v1/Vne")
++@Transactional
++public class VneController {
++    @Autowired
++    VneRepository vneRepository;
++
++    @GetMapping("/")
++    public Iterable<Vne> getAllVne() {
++        return vneRepository.findAll();
++    }
++
++
++    @GetMapping("/{id}")
++    public ResponseEntity<Vne> findOne(@PathVariable long id) throws ResourceNotFoundException {
++        Vne vne = vneRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Vne not found for this id :: " + id));
++        return ResponseEntity.ok().body(vne);
++    }
++
++
++
++    @PostMapping("/")
++    public Vne save(@RequestBody Vne vne) {
++        return vneRepository.save(vne);
++    }
++
++    @PutMapping("/{id}")
++    public ResponseEntity<Vne> updateVne(@PathVariable(value = "id") Long vneId,
++                                               @RequestBody Vne vneDetails) throws ResourceNotFoundException {
++        Vne vne = vneRepository.findById(vneId)
++                .orElseThrow(() -> new ResourceNotFoundException("Employee not found for this id :: " + vneId));
++        vne.setHost(vneDetails.getHost());
++        vne.setPassword(vneDetails.getPassword());
++        vne.setUser(vneDetails.getUser());
++
++
++        final Vne updatedVne = vneRepository.save(vne);
++        return ResponseEntity.ok(updatedVne);
++    }
++
++
++    @DeleteMapping("/{id}")
++    public Map<String, Boolean> deleteById(@PathVariable long vneId) throws ResourceNotFoundException {
++
++        Vne vne = vneRepository.findById(vneId)
++                .orElseThrow(() -> new ResourceNotFoundException("Employee not found for this id :: " + vneId));
++
++        vneRepository.deleteById(vneId);
++        Map<String, Boolean> response = new HashMap<>();
++        response.put("deleted", Boolean.TRUE);
++        return response;
++    }
++}
+Index: src/main/java/com/example/jpademo/JpademoApplication.java
+===================================================================
+--- src/main/java/com/example/jpademo/JpademoApplication.java	(revision 9aad530f09d6abf7dad202a2c6f36612f9f38937)
++++ src/main/java/com/example/JpademoApplication.java	(date 1594474024674)
+@@ -1,43 +1,19 @@
+-package com.example.jpademo;
++package com.example;
+ 
+-import com.example.jpademo.model.Book;
++
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.boot.CommandLineRunner;
+ import org.springframework.boot.SpringApplication;
+ import org.springframework.boot.autoconfigure.SpringBootApplication;
+ 
+ 
+ @SpringBootApplication
+-public class JpademoApplication implements CommandLineRunner {
++public class JpademoApplication {
+ 
+     private static final Logger log = LoggerFactory.getLogger(JpademoApplication.class);
+-
+-    @Autowired
+-    private BookRepository repository;
+-
+-
+     public static void main(String[] args) {
+         SpringApplication.run(JpademoApplication.class, args);
+     }
+ 
+-    public void run(String... args){
+-        log.info("starting spring application");
+-
+-        repository.save(new Book("Java"));
+-        repository.save(new Book("Python"));
+-        repository.save(new Book("Node"));
+ 
+-        System.out.println("\nfindAll()");
+-        repository.findAll().forEach(x -> System.out.println(x));
+-
+-        System.out.println("\nfindById()");
+-        repository.findById(1L).ifPresent(x -> System.out.println(x));
+-
+-        System.out.println("\nfindByName()");
+-        repository.findByName("Java").forEach(x -> System.out.println(x));
+-
+-
+-    }
+ }
+Index: src/main/java/com/example/vne/repository/VneRepository.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/example/vne/repository/VneRepository.java	(date 1594472286464)
++++ src/main/java/com/example/vne/repository/VneRepository.java	(date 1594472286464)
+@@ -0,0 +1,13 @@
++package com.example.vne.repository;
++
++import com.example.vne.model.Vne;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++import java.util.List;
++
++@Repository
++public interface VneRepository extends JpaRepository<Vne,Long> {
++    List<Vne> findByHost(String Host);
++
++}
+Index: src/main/resources/application.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/application.properties	(revision 9aad530f09d6abf7dad202a2c6f36612f9f38937)
++++ src/main/resources/application.properties	(date 1594473949534)
+@@ -1,1 +1,6 @@
+-
++spring.datasource.url=jdbc:mysql://172.17.0.3:3306/hero
++spring.datasource.username=root
++spring.datasource.password=root
++# enable database table auto update
++spring.jpa.hibernate.ddl-auto=update
++spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+\ No newline at end of file
+Index: pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- pom.xml	(revision 9aad530f09d6abf7dad202a2c6f36612f9f38937)
++++ pom.xml	(date 1594474170379)
+@@ -43,9 +43,8 @@
+             <optional>true</optional>
+         </dependency>
+         <dependency>
+-            <groupId>com.h2database</groupId>
+-            <artifactId>h2</artifactId>
+-            <scope>runtime</scope>
++            <groupId>mysql</groupId>
++            <artifactId>mysql-connector-java</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>org.springframework.boot</groupId>
+@@ -59,11 +58,6 @@
+             <plugin>
+                 <groupId>org.springframework.boot</groupId>
+                 <artifactId>spring-boot-maven-plugin</artifactId>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-surefire-plugin</artifactId>
+-                <version>2.22.0</version>
+             </plugin>
+         </plugins>
+     </build>
+Index: src/main/java/com/example/vne/Exception/ResourceNotFoundException.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/example/vne/Exception/ResourceNotFoundException.java	(date 1594473162033)
++++ src/main/java/com/example/vne/Exception/ResourceNotFoundException.java	(date 1594473162033)
+@@ -0,0 +1,14 @@
++package com.example.vne.Exception;
++
++import org.springframework.http.HttpStatus;
++import org.springframework.web.bind.annotation.ResponseStatus;
++
++@ResponseStatus(value = HttpStatus.NOT_FOUND)
++public class ResourceNotFoundException extends Exception{
++
++    private static final long serialVersionUID = 1L;
++
++    public ResourceNotFoundException(String message){
++        super(message);
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/example/vne/model/Vne.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/example/vne/model/Vne.java	(date 1594469844653)
++++ src/main/java/com/example/vne/model/Vne.java	(date 1594469844653)
+@@ -0,0 +1,62 @@
++package com.example.vne.model;
++
++import javax.persistence.*;
++
++@Entity
++public class Vne {
++
++    @Id
++    @GeneratedValue(strategy = GenerationType.IDENTITY)
++    Long id;
++
++    String host;
++    String user;
++    String password;
++
++    public Vne(){
++    }
++
++    public Vne(String host, String user, String password) {
++        this.host = host;
++        this.user = user;
++        this.password = password;
++    }
++
++    public Long getId() {
++        return id;
++    }
++
++    public String getHost() {
++        return host;
++    }
++
++    public void setHost(String host) {
++        this.host = host;
++    }
++
++    public String getUser() {
++        return user;
++    }
++
++    public void setUser(String user) {
++        this.user = user;
++    }
++
++    public String getPassword() {
++        return password;
++    }
++
++    public void setPassword(String password) {
++        this.password = password;
++    }
++
++    @Override
++    public String toString() {
++        return "Vne{" +
++                "id=" + id +
++                ", host='" + host + '\'' +
++                ", user='" + user + '\'' +
++                ", password='" + password + '\'' +
++                '}';
++    }
++}
